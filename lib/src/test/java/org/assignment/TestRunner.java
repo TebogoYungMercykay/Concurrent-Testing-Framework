@@ -7,9 +7,6 @@ import org.assignment.annotations.Test;
 
 import static org.junit.Assert.*;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
