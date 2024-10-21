@@ -9,7 +9,7 @@ public class ListSynchronization {
         return true;
     }
 
-    public boolean delayedMethod(int delayMillis) {
+    public boolean add(int delayMillis) {
         try {
             Thread.sleep(delayMillis);
         } catch (InterruptedException e) {
@@ -18,5 +18,13 @@ public class ListSynchronization {
         }
 
         return true;
+    }
+
+    public boolean update(int delayMillis) {
+        return add(delayMillis);
+    }
+
+    public boolean delete(int delayMillis) {
+        return add(delayMillis);
     }
 }

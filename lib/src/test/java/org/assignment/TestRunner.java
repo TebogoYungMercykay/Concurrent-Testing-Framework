@@ -25,40 +25,6 @@ public class TestRunner {
 
     @Test
     @Order(2)
-    @RunMode(ExecutionMode.CONCURRENT)
-    public void concurrentLibraryTest() throws InterruptedException {
-        ListSynchronization classUnderTest = new ListSynchronization();
-        int iterations = 10; 
-        CountDownLatch latch = new CountDownLatch(iterations);
-        ThreadPool threadPool = new ThreadPool(Runtime.getRuntime().availableProcessors());
-        AtomicBoolean hasFailed = new AtomicBoolean(false);
-
-        long startTime = System.nanoTime();
-        for (int i = 0; i < iterations; i++) {
-            threadPool.submitTask(() -> {
-                try {
-                    if (!classUnderTest.delayedMethod(5000)) {
-                        hasFailed.set(true);
-                    }
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
-
-        latch.await();
-        threadPool.shutdown();
-        long endTime = System.nanoTime();
-
-        double executionTime = (endTime - startTime) / 1_000_000.0;
-        System.out.printf("Concurrent test with %d threads completed in %.2f ms%n", Runtime.getRuntime().availableProcessors(), executionTime);
-
-        assertFalse("Concurrent test should not have any failures", hasFailed.get());
-        assertTrue("Concurrent test should complete in a reasonable time", executionTime < 60000); 
-    }
-
-    @Test
-    @Order(3)
     @RunMode(ExecutionMode.SEQUENTIAL)
     public void sequentialLibraryTest() {
         ListSynchronization classUnderTest = new ListSynchronization();
@@ -67,7 +33,7 @@ public class TestRunner {
 
         long startTime = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
-            if (!classUnderTest.delayedMethod(5000)) {
+            if (!classUnderTest.add(5000)) {
                 hasFailed.set(true);
             }
         }
@@ -80,43 +46,8 @@ public class TestRunner {
         assertTrue("Sequential test should complete in a reasonable time", executionTime < 60000); 
     }
 
-    
     @Test
-    @Order(4)
-    @RunMode(ExecutionMode.CONCURRENT)
-    public void concurrentLibraryTestShortDelay() throws InterruptedException {
-        ListSynchronization classUnderTest = new ListSynchronization();
-        int iterations = 10;
-        CountDownLatch latch = new CountDownLatch(iterations);
-        ThreadPool threadPool = new ThreadPool(Runtime.getRuntime().availableProcessors());
-        AtomicBoolean hasFailed = new AtomicBoolean(false);
-
-        long startTime = System.nanoTime();
-        for (int i = 0; i < iterations; i++) {
-            threadPool.submitTask(() -> {
-                try {
-                    if (!classUnderTest.delayedMethod(1000)) { 
-                        hasFailed.set(true);
-                    }
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
-
-        latch.await();
-        threadPool.shutdown();
-        long endTime = System.nanoTime();
-
-        double executionTime = (endTime - startTime) / 1_000_000.0;
-        System.out.printf("Concurrent test with short delay and %d threads completed in %.2f ms%n", Runtime.getRuntime().availableProcessors(), executionTime);
-
-        assertFalse("Concurrent test with short delay should not have any failures", hasFailed.get());
-        assertTrue("Concurrent test with short delay should complete in a reasonable time", executionTime < 60000); 
-    }
-
-    @Test
-    @Order(5)
+    @Order(3)
     @RunMode(ExecutionMode.SEQUENTIAL)
     public void sequentialLibraryTestShortDelay() {
         ListSynchronization classUnderTest = new ListSynchronization();
@@ -125,7 +56,7 @@ public class TestRunner {
 
         long startTime = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
-            if (!classUnderTest.delayedMethod(1000)) { 
+            if (!classUnderTest.update(1000)) { 
                 hasFailed.set(true);
             }
         }
@@ -139,7 +70,30 @@ public class TestRunner {
     }
 
     @Test
-    @Order(6)
+    @Order(4)
+    @RunMode(ExecutionMode.SEQUENTIAL)
+    public void sequentialLibraryTestMediumDelay() {
+        ListSynchronization classUnderTest = new ListSynchronization();
+        int iterations = 10;
+        AtomicBoolean hasFailed = new AtomicBoolean(false);
+
+        long startTime = System.nanoTime();
+        for (int i = 0; i < iterations; i++) {
+            if (!classUnderTest.delete(3000)) { 
+                hasFailed.set(true);
+            }
+        }
+        long endTime = System.nanoTime();
+
+        double executionTime = (endTime - startTime) / 1_000_000.0;
+        System.out.printf("Sequential test with medium delay completed in %.2f ms%n", executionTime);
+
+        assertFalse("Sequential test with medium delay should not have any failures", hasFailed.get());
+        assertTrue("Sequential test with medium delay should complete in a reasonable time", executionTime < 60000); 
+    }
+
+    @Test
+    @Order(5)
     @RunMode(ExecutionMode.CONCURRENT)
     public void concurrentLibraryTestMediumDelay() throws InterruptedException {
         ListSynchronization classUnderTest = new ListSynchronization();
@@ -152,7 +106,7 @@ public class TestRunner {
         for (int i = 0; i < iterations; i++) {
             threadPool.submitTask(() -> {
                 try {
-                    if (!classUnderTest.delayedMethod(3000)) { 
+                    if (!classUnderTest.add(5000)) { 
                         hasFailed.set(true);
                     }
                 } finally {
@@ -173,25 +127,70 @@ public class TestRunner {
     }
 
     @Test
-    @Order(7)
-    @RunMode(ExecutionMode.SEQUENTIAL)
-    public void sequentialLibraryTestMediumDelay() {
+    @Order(6)
+    @RunMode(ExecutionMode.CONCURRENT)
+    public void concurrentLibraryTestShortDelay() throws InterruptedException {
         ListSynchronization classUnderTest = new ListSynchronization();
         int iterations = 10;
+        CountDownLatch latch = new CountDownLatch(iterations);
+        ThreadPool threadPool = new ThreadPool(Runtime.getRuntime().availableProcessors());
         AtomicBoolean hasFailed = new AtomicBoolean(false);
 
         long startTime = System.nanoTime();
         for (int i = 0; i < iterations; i++) {
-            if (!classUnderTest.delayedMethod(3000)) { 
-                hasFailed.set(true);
-            }
+            threadPool.submitTask(() -> {
+                try {
+                    if (!classUnderTest.update(1000)) { 
+                        hasFailed.set(true);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
         }
+
+        latch.await();
+        threadPool.shutdown();
         long endTime = System.nanoTime();
 
         double executionTime = (endTime - startTime) / 1_000_000.0;
-        System.out.printf("Sequential test with medium delay completed in %.2f ms%n", executionTime);
+        System.out.printf("Concurrent test with short delay and %d threads completed in %.2f ms%n", Runtime.getRuntime().availableProcessors(), executionTime);
 
-        assertFalse("Sequential test with medium delay should not have any failures", hasFailed.get());
-        assertTrue("Sequential test with medium delay should complete in a reasonable time", executionTime < 60000); 
+        assertFalse("Concurrent test with short delay should not have any failures", hasFailed.get());
+        assertTrue("Concurrent test with short delay should complete in a reasonable time", executionTime < 60000); 
+    }
+
+    @Test
+    @Order(7)
+    @RunMode(ExecutionMode.CONCURRENT)
+    public void concurrentLibraryTest() throws InterruptedException {
+        ListSynchronization classUnderTest = new ListSynchronization();
+        int iterations = 10; 
+        CountDownLatch latch = new CountDownLatch(iterations);
+        ThreadPool threadPool = new ThreadPool(Runtime.getRuntime().availableProcessors());
+        AtomicBoolean hasFailed = new AtomicBoolean(false);
+
+        long startTime = System.nanoTime();
+        for (int i = 0; i < iterations; i++) {
+            threadPool.submitTask(() -> {
+                try {
+                    if (!classUnderTest.delete(3000)) {
+                        hasFailed.set(true);
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        threadPool.shutdown();
+        long endTime = System.nanoTime();
+
+        double executionTime = (endTime - startTime) / 1_000_000.0;
+        System.out.printf("Concurrent test with %d threads completed in %.2f ms%n", Runtime.getRuntime().availableProcessors(), executionTime);
+
+        assertFalse("Concurrent test should not have any failures", hasFailed.get());
+        assertTrue("Concurrent test should complete in a reasonable time", executionTime < 60000); 
     }
 }
