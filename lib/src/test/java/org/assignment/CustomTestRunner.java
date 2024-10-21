@@ -19,6 +19,8 @@ import java.util.concurrent.Executors;
 public class CustomTestRunner extends Runner {
 
     private final Class<?> testClass;
+    private int passedTests = 0;
+    private int failedTests = 0;
 
     public CustomTestRunner(Class<?> testClass) {
         this.testClass = testClass;
@@ -31,6 +33,7 @@ public class CustomTestRunner extends Runner {
 
     @Override
     public void run(RunNotifier notifier) {
+        long startTime = System.currentTimeMillis();
         try {
             Object testInstance = testClass.getDeclaredConstructor().newInstance();
             Method[] methods = testClass.getDeclaredMethods();
@@ -54,6 +57,21 @@ public class CustomTestRunner extends Runner {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            long endTime = System.currentTimeMillis();
+            long totalTime = endTime - startTime;
+            int totalTests = passedTests + failedTests;
+
+            // ANSI escape codes for colors
+            final String ANSI_RESET = "\u001B[0m";
+            final String ANSI_GREEN = "\u001B[32m";
+            final String ANSI_RED = "\u001B[31m";
+            final String ANSI_BLUE = "\u001B[34m";
+
+            System.out.println(ANSI_GREEN + "Total tests: " + totalTests + ANSI_RESET);
+            System.out.println(ANSI_GREEN + "Passed tests: " + passedTests + ANSI_RESET);
+            System.out.println(ANSI_RED + "Failed tests: " + failedTests + ANSI_RESET);
+            System.out.println(ANSI_BLUE + "Total time taken: " + totalTime + " ms" + ANSI_RESET);
         }
     }
 
@@ -62,8 +80,10 @@ public class CustomTestRunner extends Runner {
         notifier.fireTestStarted(description);
         try {
             method.invoke(testInstance);
+            passedTests++;
             notifier.fireTestFinished(description);
         } catch (Throwable t) {
+            failedTests++;
             notifier.fireTestFailure(new org.junit.runner.notification.Failure(description, t));
         }
     }
@@ -76,8 +96,10 @@ public class CustomTestRunner extends Runner {
 
         executor.submit(() -> {
             try {
+                passedTests++;
                 method.invoke(testInstance);
             } catch (Throwable t) {
+                failedTests++;
                 notifier.fireTestFailure(new org.junit.runner.notification.Failure(description, t));
             } finally {
                 latch.countDown();
@@ -87,6 +109,7 @@ public class CustomTestRunner extends Runner {
         try {
             latch.await();
         } catch (InterruptedException e) {
+            failedTests++;
             notifier.fireTestFailure(new org.junit.runner.notification.Failure(description, e));
         } finally {
             executor.shutdown();
